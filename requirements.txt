@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+jinja2
+SQLAlchemy
+python-decouple
+passlib[bcrypt]
+python-jose[cryptography]
+pydantic[email]
+alembic
+psycopg2-binary
+tenacity
