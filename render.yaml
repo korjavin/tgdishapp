@@ -13,7 +13,7 @@ services:
           property: connectionString
       - key: DOMAIN
         value: ${{ k_RENDER_EXTERNAL_URL }}
-  - type: psql
+  - type: db
     name: dish-duty-db
     region: oregon
     plan: free
