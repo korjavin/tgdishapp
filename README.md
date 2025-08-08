@@ -81,24 +81,6 @@ A Telegram web app to track and delegate dish duties for the family.
 4.  **Access the application:**
     The application will be available at `https://{$DOMAIN}` with HTTPS automatically configured by Caddy.
 
-## Deploy to Render
-
-You can deploy this application to Render by clicking the button below.
-
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
-
-Alternatively, you can manually deploy by following these steps:
-
-1.  **Fork this repository.**
-2.  **Create a new "Blueprint" service on Render.**
-3.  **Connect your forked repository.**
-4.  **Render will automatically detect the `render.yaml` file and configure the services.**
-5.  **Add the required environment variables in the Render dashboard:**
-    - `TELEGRAM_BOT_TOKEN`: Your Telegram bot token.
-    - `ADMIN_USER_ID`: Your Telegram user ID.
-
-The `DATABASE_URL` and `DOMAIN` variables will be automatically set by Render.
-
 ## Telegram Integration
 
 To integrate with Telegram, you need to:
