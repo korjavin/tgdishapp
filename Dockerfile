@@ -29,6 +29,9 @@ COPY --from=builder /usr/local/bin/ /usr/local/bin/
 # Copy application code
 COPY --from=builder /app/src /app/src
 
+# Add /app to PYTHONPATH
+ENV PYTHONPATH=/app
+
 # Expose the port the app will run on
 EXPOSE 8000
 
