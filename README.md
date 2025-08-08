@@ -7,7 +7,7 @@ A Telegram web app to track and delegate dish duties for the family.
 - Calendar view of dish duties.
 - Admin can delegate duties to registered users.
 - Users can see their designated duties.
-- Users can self-delegate to a free day in the future.
+- Users can self-delegate to a free day in the a future.
 - Archive of past duties.
 
 ## Development Setup
@@ -32,7 +32,6 @@ A Telegram web app to track and delegate dish duties for the family.
     ```
     - `TELEGRAM_BOT_TOKEN`: Your Telegram bot token.
     - `ADMIN_USER_ID`: Your Telegram user ID. This user will have admin privileges.
-    - `DOMAIN`: The domain name for your web app (e.g., `localhost` for local development).
 
 3.  **Run the application:**
     - **Using Docker:**
@@ -43,19 +42,16 @@ A Telegram web app to track and delegate dish duties for the family.
       ```bash
       podman-compose up --build
       ```
-      If you encounter issues with port binding, you may need to allow non-privileged users to bind to privileged ports. For Podman, you can use:
-      ```bash
-      sudo sysctl net.ipv4.ip_unprivileged_port_start=80
-      ```
 
 4.  **Access the application:**
-    Open your browser and navigate to `http://{$DOMAIN}` (e.g., `http://localhost`).
+    Open your browser and navigate to `http://localhost:8000`.
 
 ## Production Deployment
 
 ### Prerequisites
 
 - A server with Docker or Podman installed.
+- A reverse proxy (like Traefik, Nginx, or Caddy) to handle SSL termination.
 - A registered domain name pointing to your server's IP address.
 - A container image pushed to a registry (e.g., GitHub Container Registry).
 
@@ -66,7 +62,7 @@ A Telegram web app to track and delegate dish duties for the family.
 
 2.  **Prepare the server:**
     - Clone the repository to your server.
-    - Create the `.env` file as described in the development setup. Make sure to set the `DOMAIN` to your registered domain name.
+    - Create the `.env` file as described in the development setup.
 
 3.  **Run the application:**
     - **Using Docker:**
@@ -78,12 +74,12 @@ A Telegram web app to track and delegate dish duties for the family.
       podman-compose -f docker-compose.prod.yml up -d
       ```
 
-4.  **Access the application:**
-    The application will be available at `https://{$DOMAIN}` with HTTPS automatically configured by Caddy.
+4.  **Configure your reverse proxy:**
+    Configure your external reverse proxy (e.g., Traefik) to point to the application running on port 8000.
 
 ## Telegram Integration
 
 To integrate with Telegram, you need to:
 1.  Create a bot with [@BotFather](https://t.me/BotFather).
-2.  Set the bot's web app URL to your application's URL.
+2.  Set the bot's web app URL to your application's public URL (handled by your reverse proxy).
 3.  The application will use the user's Telegram ID for authentication.
