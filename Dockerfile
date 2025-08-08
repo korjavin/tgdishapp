@@ -29,6 +29,9 @@ COPY --from=builder /usr/local/bin/ /usr/local/bin/
 # Copy application code
 COPY --from=builder /app/src /app/src
 
+# Change ownership to appuser
+RUN chown -R appuser:appuser /app
+
 # Add /app to PYTHONPATH
 ENV PYTHONPATH=/app
 
