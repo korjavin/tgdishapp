@@ -9,22 +9,21 @@ services:
       - .env
     volumes:
       - ./src:/app/src
-      - db_data:/app/db  # Mount the database volume
-
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    environment:
-      - DOMAIN=${DOMAIN}
+      - db_data:/app/db
+    networks:
+      - default
+      - traefik_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls.certresolver=myresolver"
+      - "traefik.http.services.app.loadbalancer.server.port=8000"
 
 volumes:
   db_data:
-  caddy_data:
-  caddy_config:
+
+networks:
+  traefik_network:
+    external: true
+    name: ${TRAEFIK_NETWORK:-proxy}

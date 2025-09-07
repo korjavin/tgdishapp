@@ -1,35 +1,32 @@
-# Project Improvements and Security Analysis
+# Project Improvements and Security Analysis (Traefik Edition)
 
-This document outlines the discrepancies, security vulnerabilities, and areas for improvement found during the project review. The changes were implemented based on the requirements specified in `AGENTS.md`.
+This document outlines the discrepancies, security vulnerabilities, and areas for improvement found during the project review. The changes were implemented based on the requirements specified in `AGENTS.md` and the user's request to use an existing Traefik reverse proxy.
 
 ## 1. Discrepancies from `AGENTS.md`
 
-The following issues were identified where the project did not meet the specified standards:
+The following issues were identified in the original project:
 
--   **Reverse Proxy:** Neither the development nor production `docker-compose` files included the required reverse proxy (e.g., Caddy). The application container's port was exposed directly.
--   **Data Persistence:** The SQLite database was being created inside the container's ephemeral filesystem, leading to data loss upon container restart. A persistent volume was not configured.
--   **Production Image Configuration:** The `docker-compose.prod.yml` file used a hardcoded, placeholder image name instead of a configurable environment variable.
--   **Incomplete Documentation:** The `README.md` was missing crucial instructions for:
-    -   Running the services with the integrated reverse proxy.
-    -   Running as a non-privileged user and handling privileged ports.
-    -   Specifying the production container image via an environment variable.
--   **CI/CD Trigger Branch:** The GitHub Actions workflow was configured to trigger on the `master` branch instead of the `main` branch.
--   **Missing Environment Variable:** The `.env.example` file was missing the `DATABASE_URL` variable, which is used to configure the application's database connection.
+-   **No Reverse Proxy:** The original `docker-compose` files did not include or configure a reverse proxy, exposing the application's port directly.
+-   **Data Persistence:** The SQLite database was being created inside the container's ephemeral filesystem, leading to data loss upon container restart.
+-   **Production Image Configuration:** The `docker-compose.prod.yml` file used a hardcoded, placeholder image name.
+-   **Incomplete Documentation:** The `README.md` was missing crucial instructions for a secure production setup.
+-   **CI/CD Trigger Branch:** The GitHub Actions workflow was configured to trigger on the `master` branch instead of `main`.
+-   **Missing Environment Variable:** The `.env.example` file was missing the `DATABASE_URL` variable.
 
 ## 2. Security Vulnerabilities
 
--   **Lack of HTTPS in Development:** The original development setup ran on plain HTTP, which is not ideal even for local development. The introduction of Caddy resolves this by providing a locally trusted SSL certificate.
--   **Direct Exposure of Application Port:** Exposing the application's port (8000) directly to the host network in production is a security risk. A reverse proxy should be the only entry point, providing a single, hardened layer of security.
--   **Potential for Data Loss:** While not a direct security vulnerability, the lack of data persistence for the database could lead to the loss of all user and application data, which is a critical operational failure.
+-   **Lack of HTTPS:** The original setup ran on plain HTTP, which is insecure.
+-   **Direct Exposure of Application Port:** Exposing the application's port (8000) directly to the host network in production is a security risk.
+-   **Potential for Data Loss:** The lack of data persistence for the database is a critical operational failure risk.
 
-## 3. Implemented Fixes
+## 3. Implemented Fixes (Traefik-based)
 
-To address these issues, the following changes were made:
+To address these issues, the following changes were made, using an external Traefik reverse proxy as requested:
 
--   **Integrated Caddy Reverse Proxy:** Both `docker-compose.yml` and `docker-compose.prod.yml` were updated to include a Caddy service for automatic HTTPS and secure request handling.
--   **Added Persistent Volumes:** Named Docker volumes were added to both compose files to ensure the SQLite database (`duties.db`) and Caddy's SSL certificates persist.
+-   **Traefik Integration:** Added Traefik labels to the `app` service in both `docker-compose.yml` and `docker-compose.prod.yml`. This allows an external Traefik instance to automatically discover the service and provide HTTPS.
+-   **Added Persistent Volumes:** A named Docker volume was added to both compose files to ensure the SQLite database (`duties.db`) persists across container restarts.
 -   **Improved Production Configuration:** The production compose file now uses an `IMAGE_NAME` environment variable to specify the container image.
--   **Enhanced Documentation:** The `README.md` was completely overhauled with detailed, step-by-step instructions that align with the new, more secure setup. It now includes guidance for non-privileged users.
+-   **Enhanced Documentation:** The `README.md` was overhauled with detailed instructions for running the application behind an existing Traefik reverse proxy.
 -   **Corrected CI/CD Workflow:** The GitHub Actions workflow trigger was updated to the `main` branch.
--   **Updated Environment Example:** The `.env.example` file was updated to include all necessary variables.
+-   **Updated Environment Example:** The `.env.example` file was updated to include all necessary variables with comments relevant to the Traefik setup.
 -   **Cleaned `.gitignore`:** The `.gitignore` file was tidied up to remove duplicate entries.
