@@ -1,0 +1,16 @@
+{
+    # This block is for global options.
+    # acme_ca https://acme-staging-v02.api.letsencrypt.org/directory # Uncomment for staging certificates
+    email your-email@example.com # Replace with your email
+}
+
+{$DOMAIN}:443 {
+    # This block configures the reverse proxy for your domain.
+    reverse_proxy app:8000
+    # Enable gzip compression for better performance.
+    encode gzip
+    # Specify log file location.
+    log {
+        output file /var/log/caddy/access.log
+    }
+}

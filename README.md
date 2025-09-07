@@ -1,85 +1,132 @@
 # Family Dish Duty Tracker
 
-A Telegram web app to track and delegate dish duties for the family.
+A Telegram web app to track and delegate dish duties for the family. This project is configured to run securely in containers using Docker or Podman, with automatic HTTPS provided by a Caddy reverse proxy.
 
 ## Features
 
-- Calendar view of dish duties.
-- Admin can delegate duties to registered users.
-- Users can see their designated duties.
-- Users can self-delegate to a free day in the a future.
-- Archive of past duties.
+-   Calendar view of dish duties.
+-   Admin can delegate duties to registered users.
+-   Users can see their designated duties.
+-   Users can self-delegate to a free day in the future.
+-   Archive of past duties.
+-   Secure by default with HTTPS.
 
-## Development Setup
+## Prerequisites
 
-### Prerequisites
+-   Docker or Podman with `docker-compose` or `podman-compose`.
+-   A Telegram Bot Token from [@BotFather](https://t.me/BotFather).
+-   A domain name (for production) or `localhost` (for development).
 
-- Docker or Podman
-- A Telegram Bot Token from [@BotFather](https://t.me/BotFather)
+---
 
-### Instructions
+## Development Setup (with HTTPS)
 
-1.  **Clone the repository:**
+This setup runs the application from local source code, with live-reloading for the backend. Caddy is included to provide automatic HTTPS on `localhost`.
+
+1.  **Clone the Repository:**
     ```bash
     git clone <repository-url>
     cd <repository-name>
     ```
 
-2.  **Create an environment file:**
-    Copy the `.env.example` file to `.env` and fill in the required values.
+2.  **Configure Environment:**
+    Copy `.env.example` to `.env` and fill in the variables.
     ```bash
     cp .env.example .env
     ```
-    - `TELEGRAM_BOT_TOKEN`: Your Telegram bot token.
-    - `ADMIN_USER_ID`: Your Telegram user ID. This user will have admin privileges.
+    -   `TELEGRAM_BOT_TOKEN`: Your Telegram bot token.
+    -   `ADMIN_USER_ID`: Your Telegram user ID for admin rights.
+    -   `DOMAIN`: For local development, set this to `localhost`.
+    -   `DATABASE_URL`: Defaults to `sqlite:///db/duties.db`. The database will be stored in a persistent Docker volume.
+    -   `IMAGE_NAME`: Not used in development.
 
-3.  **Run the application:**
-    - **Using Docker:**
-      ```bash
-      docker-compose up --build
-      ```
-    - **Using Podman:**
-      ```bash
-      podman-compose up --build
-      ```
+3.  **Run the Application:**
+    -   **Using Docker:**
+        ```bash
+        docker-compose up --build
+        ```
+    -   **Using Podman:**
+        ```bash
+        podman-compose up --build
+        ```
+    The first time you run this, Caddy will generate and install a local CA and SSL certificate. You may be prompted for your `sudo` password.
 
-4.  **Access the application:**
-    Open your browser and navigate to `http://localhost:8000`.
+4.  **Access the Application:**
+    Open your browser and navigate to `https://localhost`. You should see the application running with a valid SSL certificate.
+
+---
 
 ## Production Deployment
 
-### Prerequisites
+This setup pulls a pre-built container image from a registry and runs it. It is designed for a production server with a public domain name.
 
-- A server with Docker or Podman installed.
-- A reverse proxy (like Traefik, Nginx, or Caddy) to handle SSL termination.
-- A registered domain name pointing to your server's IP address.
-- A container image pushed to a registry (e.g., GitHub Container Registry).
+1.  **CI/CD:**
+    The GitHub Actions workflow in this repository automatically builds and pushes the container image to the GitHub Container Registry (`ghcr.io`) on every push to the `main` branch.
 
-### Instructions
+2.  **Server Setup:**
+    -   Clone this repository on your production server.
+    -   Ensure Docker or Podman is installed.
 
-1.  **Push the Docker image to a registry:**
-    The CI/CD workflow in this repository is configured to build and push the image to `ghcr.io` automatically on pushes to the `main` branch.
+3.  **Configure Environment:**
+    Create an `.env` file and fill in the production values:
+    -   `TELEGRAM_BOT_TOKEN`: Your production Telegram bot token.
+    -   `ADMIN_USER_ID`: The production admin's Telegram user ID.
+    -   `DOMAIN`: Your public domain name (e.g., `dishes.example.com`).
+    -   `DATABASE_URL`: It's highly recommended to use a robust database like PostgreSQL in production.
+    -   `IMAGE_NAME`: The full path to the container image, e.g., `ghcr.io/your-org/your-repo:latest`.
 
-2.  **Prepare the server:**
-    - Clone the repository to your server.
-    - Create the `.env` file as described in the development setup.
+4.  **Run the Application:**
+    -   **Using Docker:**
+        ```bash
+        docker-compose -f docker-compose.prod.yml up -d
+        ```
+    -   **Using Podman:**
+        ```bash
+        podman-compose -f docker-compose.prod.yml up -d
+        ```
+    Caddy will automatically obtain a trusted SSL certificate from Let's Encrypt for your domain.
 
-3.  **Run the application:**
-    - **Using Docker:**
-      ```bash
-      docker-compose -f docker-compose.prod.yml up -d
-      ```
-    - **Using Podman:**
-      ```bash
-      podman-compose -f docker-compose.prod.yml up -d
-      ```
+5.  **Telegram Integration:**
+    -   In Telegram, talk to `@BotFather`.
+    -   Set your bot's Web App URL to your public domain: `https://<your-domain>`.
 
-4.  **Configure your reverse proxy:**
-    Configure your external reverse proxy (e.g., Traefik) to point to the application running on port 8000.
+---
 
-## Telegram Integration
+## Running as a Non-Privileged User
 
-To integrate with Telegram, you need to:
-1.  Create a bot with [@BotFather](https://t.me/BotFather).
-2.  Set the bot's web app URL to your application's public URL (handled by your reverse proxy).
-3.  The application will use the user's Telegram ID for authentication.
+Binding to privileged ports (80, 443) typically requires root. Here’s how to handle it without running Docker or Podman as root.
+
+### For Docker
+
+You can grant the Docker daemon the capability to bind to low-numbered ports.
+
+1.  **Find the Docker proxy path:**
+    ```bash
+    ps aux | grep docker-proxy
+    ```
+    This will show you the path to the `docker-proxy` binary.
+
+2.  **Grant capabilities:**
+    ```bash
+    sudo setcap cap_net_bind_service=+ep /path/to/your/docker-proxy
+    ```
+
+### For Podman
+
+Podman runs rootless by default. You can allow rootless users to bind to privileged ports via a system configuration.
+
+1.  **Edit `sysctl.conf`:**
+    ```bash
+    sudo nano /etc/sysctl.conf
+    ```
+
+2.  **Add the following line:**
+    ```
+    net.ipv4.ip_unprivileged_port_start=80
+    ```
+
+3.  **Apply the changes:**
+    ```bash
+    sudo sysctl --system
+    ```
+This allows any user to bind to ports 80 and above.
