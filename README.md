@@ -1,85 +1,93 @@
 # Family Dish Duty Tracker
 
-A Telegram web app to track and delegate dish duties for the family.
+A Telegram web app to track and delegate dish duties for the family. This project is configured to be securely exposed via Traefik, a modern reverse proxy.
 
 ## Features
 
-- Calendar view of dish duties.
-- Admin can delegate duties to registered users.
-- Users can see their designated duties.
-- Users can self-delegate to a free day in the a future.
-- Archive of past duties.
+-   Calendar view of dish duties.
+-   Admin can delegate duties to registered users.
+-   Users can see their designated duties.
+-   Users can self-delegate to a free day in the future.
+-   Archive of past duties.
+
+## Prerequisites
+
+-   An existing Traefik v2 instance running in Docker.
+-   The Traefik instance must be connected to a Docker network (e.g., `proxy`).
+-   Docker or Podman with `docker-compose` or `podman-compose`.
+-   A Telegram Bot Token from [@BotFather](https://t.me/BotFather).
+-   A domain name (for production) or `localhost` (for development).
+
+---
 
 ## Development Setup
 
-### Prerequisites
+This setup runs the application from local source code, with live-reloading for the backend. It's designed to be automatically discovered by your existing Traefik container.
 
-- Docker or Podman
-- A Telegram Bot Token from [@BotFather](https://t.me/BotFather)
-
-### Instructions
-
-1.  **Clone the repository:**
+1.  **Clone the Repository:**
     ```bash
     git clone <repository-url>
     cd <repository-name>
     ```
 
-2.  **Create an environment file:**
-    Copy the `.env.example` file to `.env` and fill in the required values.
+2.  **Configure Environment:**
+    Copy `.env.example` to `.env` and fill in the variables.
     ```bash
     cp .env.example .env
     ```
-    - `TELEGRAM_BOT_TOKEN`: Your Telegram bot token.
-    - `ADMIN_USER_ID`: Your Telegram user ID. This user will have admin privileges.
+    -   `TELEGRAM_BOT_TOKEN`: Your Telegram bot token.
+    -   `ADMIN_USER_ID`: Your Telegram user ID for admin rights.
+    -   `DOMAIN`: The hostname Traefik should use. For local development, you might use `app.localhost` and modify your `/etc/hosts` file accordingly.
+    -   `DATABASE_URL`: Defaults to `sqlite:///db/duties.db`. The database will be stored in a persistent Docker volume.
+    -   `TRAEFIK_NETWORK`: The name of your external Traefik network (e.g., `proxy`).
 
-3.  **Run the application:**
-    - **Using Docker:**
-      ```bash
-      docker-compose up --build
-      ```
-    - **Using Podman:**
-      ```bash
-      podman-compose up --build
-      ```
+3.  **Run the Application:**
+    -   **Using Docker:**
+        ```bash
+        docker-compose up --build
+        ```
+    -   **Using Podman:**
+        ```bash
+        podman-compose up --build
+        ```
+    Traefik will detect the running container via its labels and automatically configure routing and HTTPS.
 
-4.  **Access the application:**
-    Open your browser and navigate to `http://localhost:8000`.
+4.  **Access the Application:**
+    Open your browser and navigate to `https://<your-domain>`.
+
+---
 
 ## Production Deployment
 
-### Prerequisites
+This setup pulls a pre-built container image from a registry and runs it.
 
-- A server with Docker or Podman installed.
-- A reverse proxy (like Traefik, Nginx, or Caddy) to handle SSL termination.
-- A registered domain name pointing to your server's IP address.
-- A container image pushed to a registry (e.g., GitHub Container Registry).
+1.  **CI/CD:**
+    The GitHub Actions workflow in this repository automatically builds and pushes the container image to the GitHub Container Registry (`ghcr.io`) on every push to the `main` branch.
 
-### Instructions
+2.  **Server Setup:**
+    -   Clone this repository on your production server.
+    -   Ensure your Traefik instance is running and connected to the external network.
 
-1.  **Push the Docker image to a registry:**
-    The CI/CD workflow in this repository is configured to build and push the image to `ghcr.io` automatically on pushes to the `main` branch.
+3.  **Configure Environment:**
+    Create an `.env` file and fill in the production values:
+    -   `TELEGRAM_BOT_TOKEN`: Your production Telegram bot token.
+    -   `ADMIN_USER_ID`: The production admin's Telegram user ID.
+    -   `DOMAIN`: Your public domain name (e.g., `dishes.example.com`).
+    -   `DATABASE_URL`: It's highly recommended to use a robust database like PostgreSQL in production.
+    -   `IMAGE_NAME`: The full path to the container image from the registry, e.g., `ghcr.io/your-org/your-repo:latest`.
+    -   `TRAEFIK_NETWORK`: The name of your external Traefik network.
 
-2.  **Prepare the server:**
-    - Clone the repository to your server.
-    - Create the `.env` file as described in the development setup.
+4.  **Run the Application:**
+    -   **Using Docker:**
+        ```bash
+        docker-compose -f docker-compose.prod.yml up -d
+        ```
+    -   **Using Podman:**
+        ```bash
+        podman-compose -f docker-compose.prod.yml up -d
+        ```
+    Traefik will handle obtaining and renewing the SSL certificate for your domain.
 
-3.  **Run the application:**
-    - **Using Docker:**
-      ```bash
-      docker-compose -f docker-compose.prod.yml up -d
-      ```
-    - **Using Podman:**
-      ```bash
-      podman-compose -f docker-compose.prod.yml up -d
-      ```
-
-4.  **Configure your reverse proxy:**
-    Configure your external reverse proxy (e.g., Traefik) to point to the application running on port 8000.
-
-## Telegram Integration
-
-To integrate with Telegram, you need to:
-1.  Create a bot with [@BotFather](https://t.me/BotFather).
-2.  Set the bot's web app URL to your application's public URL (handled by your reverse proxy).
-3.  The application will use the user's Telegram ID for authentication.
+5.  **Telegram Integration:**
+    -   In Telegram, talk to `@BotFather`.
+    -   Set your bot's Web App URL to your public domain: `https://<your-domain>`.

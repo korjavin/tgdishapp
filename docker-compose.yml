@@ -9,5 +9,21 @@ services:
       - .env
     volumes:
       - ./src:/app/src
-    ports:
-      - "8000:8000"
+      - db_data:/app/db
+    networks:
+      - default
+      - traefik_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls.certresolver=myresolver"
+      - "traefik.http.services.app.loadbalancer.server.port=8000"
+
+volumes:
+  db_data:
+
+networks:
+  traefik_network:
+    external: true
+    name: ${TRAEFIK_NETWORK:-proxy}

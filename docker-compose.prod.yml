@@ -2,8 +2,26 @@ version: '3.8'
 
 services:
   app:
-    image: ghcr.io/your-username/your-repo:latest # Replace with your image name
+    image: ${IMAGE_NAME}
+    restart: always
     env_file:
       - .env
-    ports:
-      - "8000:8000"
+    volumes:
+      - db_data:/app/db
+    networks:
+      - default
+      - traefik_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls.certresolver=myresolver"
+      - "traefik.http.services.app.loadbalancer.server.port=8000"
+
+volumes:
+  db_data:
+
+networks:
+  traefik_network:
+    external: true
+    name: ${TRAEFIK_NETWORK:-proxy}
